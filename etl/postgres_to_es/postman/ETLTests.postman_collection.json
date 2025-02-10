@@ -1,0 +1,172 @@
+{
+  "info": {
+    "_postman_id": "d817fc79-dd7b-4419-98ad-793ee72e2c87",
+    "name": "ETLTests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Проверка количества элементов",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/movies/_search",
+          "host": ["{{base_url}}"],
+          "path": ["movies", "_search"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200\", function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Total 999 records\", function() {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.hits.total.value).to.eql(999);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Поиск по слову 'camp'",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": {\n    \"multi_match\": {\n      \"query\": \"camp\",\n      \"fields\": [\"title\", \"description\", \"actors_names\", \"writers_names\"],\n      \"fuzziness\": \"auto\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/movies/_search",
+          "host": ["{{base_url}}"],
+          "path": ["movies", "_search"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200\", function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"24 matches found\", function() {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.hits.total.value).to.eql(24);",
+              "});",
+              "",
+              "pm.test(\"Correct first result\", function() {",
+              "    const firstHit = pm.response.json().hits.hits[0];",
+              "    pm.expect(firstHit._id).to.eql('6764dd98-6546-4ccf-95c5-74a63e980768');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Поиск по актеру Greg Camp",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": {\n    \"nested\": {\n      \"path\": \"actors\",\n      \"query\": {\n        \"bool\": {\n          \"must\": [\n            {\n              \"match\": {\n                \"actors.name\": \"Greg Camp\"\n              }\n            }\n          ]\n        }\n      }\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/movies/_search",
+          "host": ["{{base_url}}"],
+          "path": ["movies", "_search"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200\", function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"6 matches found\", function() {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.hits.total.value).to.eql(6);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Проверка количества жанров",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"size\": 0,\n  \"aggs\": {\n    \"uniq_genres\": {\n      \"terms\": {\n        \"field\": \"genres\",\n        \"size\": 100\n      }\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/movies/_search",
+          "host": ["{{base_url}}"],
+          "path": ["movies", "_search"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"26 unique genres\", function() {",
+              "    const buckets = pm.response.json().aggregations.uniq_genres.buckets;",
+              "    pm.expect(buckets).to.have.lengthOf(26);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": ["// Pre-request scripts if needed"]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:9200"
+    }
+  ]
+}

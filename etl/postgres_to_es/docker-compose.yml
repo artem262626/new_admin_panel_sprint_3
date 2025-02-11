@@ -33,6 +33,7 @@ services:
     command: >
       sh -c "/app/wait-for-es.sh &&
              python manage.py migrate &&
+             python manage.py loaddata test_data &&
              python manage.py create_es_index &&
              python manage.py sync_data &&
              gunicorn config.wsgi:application --bind 0.0.0.0:8000"

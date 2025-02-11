@@ -1,0 +1,41 @@
+{
+  "item": [
+    {
+      "name": "Проверка загрузки данных",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": {\n    \"term\": {\n      \"id\": {\n        \"value\": \"6764dd98-6546-4ccf-95c5-74a63e980768\"\n      }\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/movies/_search",
+          "host": ["{{base_url}}"],
+          "path": ["movies", "_search"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Данные из PostgreSQL в ES\", function() {",
+              "    const doc = pm.response.json().hits.hits[0]._source;",
+              "    pm.expect(doc.title).to.eql('Test Movie 1');",
+              "    pm.expect(doc.genres).to.eql(['Action', 'Drama']);",
+              "    pm.expect(doc.directors[0].name).to.eql('John Doe');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}

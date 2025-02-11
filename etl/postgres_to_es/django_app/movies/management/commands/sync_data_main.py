@@ -130,12 +130,12 @@ def fetch_data_from_pg(
             rows = cursor.fetchall()
             if not rows:
                 break
-            
+
             max_modified = max(row['modified'] for row in rows)
             if max_modified > state.last_modified:
                 state.last_modified = max_modified
                 state.save()
-            
+
             yield rows
 
 
@@ -176,7 +176,7 @@ def load_to_es(es: Elasticsearch, data: Iterator[Dict]) -> bool:
     """Загрузка данных в Elasticsearch с обработкой ошибок"""
     try:
         success_count, errors = helpers.bulk(es, data, stats_only=False)
-        
+
         if errors:
             logger.error(f"Failed to index {len(errors)} documents:")
             for error in errors:
@@ -184,10 +184,10 @@ def load_to_es(es: Elasticsearch, data: Iterator[Dict]) -> bool:
                     f"Document ID: {error['index']['_id']}, "
                     f"Error: {error['index']['error']['reason']}"
                 )
-        
+
         logger.info(f"Successfully indexed {success_count} documents")
         return success_count > 0
-        
+
     except Exception as e:
         logger.error(f"Bulk upload failed: {str(e)}")
         return False
@@ -208,22 +208,22 @@ def main():
         while True:
             state.load()
             total_processed = 0
-            
+
             try:
                 for batch in fetch_data_from_pg(state, settings):
                     transformed = transform_data(batch)
                     if load_to_es(es, transformed):
                         total_processed += len(batch)
                         logger.info(f"Processed batch of {len(batch)} records")
-                
+
                 logger.info(f"Total processed: {total_processed}")
                 logger.info(f"Next run in {settings.sleep_interval}s...")
                 time.sleep(settings.sleep_interval)
-            
+
             except Exception as e:
                 logger.error(f"Processing error: {e}", exc_info=True)
                 time.sleep(60)
-    
+
     except KeyboardInterrupt:
         logger.info("ETL process stopped by user")
     finally:
